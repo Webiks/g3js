@@ -1,6 +1,6 @@
 import {
-  Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChild,
-  ViewEncapsulation
+  Component, ElementRef, Input, Output, OnChanges, SimpleChanges, ViewChild,
+  ViewEncapsulation, EventEmitter
 } from '@angular/core';
 import {D3, D3Service,} from 'd3-ng2-service';
 
@@ -13,6 +13,9 @@ import {D3, D3Service,} from 'd3-ng2-service';
 export class BarChartComponent implements OnChanges {
   private static d3: D3;
   @Input() data: any[];
+  @Input() update: boolean;
+  @Output() onUpdateReset = new EventEmitter<boolean>();
+
   @ViewChild('graphContainer') parentElement: ElementRef;
   // This function is based on code published by brendan sudol
   // https://brendansudol.com/writing/responsive-d3
@@ -64,21 +67,25 @@ export class BarChartComponent implements OnChanges {
 
       BarChartComponent.responsivefy(svg)
       // svg.attr('viewbox', null)
+      // todo: add override support
       // y scale
       let maxYValue = d3.max(this.data, d => d.value);
       let yScale = d3.scaleLinear()
         .domain([0, maxYValue])
         .range([height, 0]);
       let yAxis = d3.axisLeft(yScale)
-            .tickPadding(20);
+        .tickPadding(20);
       mainG.call(yAxis);
+      // todo: add override support
       // x scale
       let xScale = d3.scaleBand()
         .padding(0.2)
-        .domain(this.data.map(d => d.name))
+        .domain(this.data.map(d => d.text))
         .range([0, width]);
       let xAxis = d3.axisBottom(xScale);
 
+      // todo: add override support
+      // todo: add directions support?
       mainG.append('g')
         .attr('transform', `translate(0, ${height})`)
         .call(xAxis)
@@ -86,29 +93,30 @@ export class BarChartComponent implements OnChanges {
         .style('text-anchor', 'middle');
 
       //add bars
+      // todo: add override support
       let bar = mainG.selectAll('rect')
         .data(this.data)
         .enter()
         .append('rect')
-        .attr('class', (d, k) =>  {
+        .attr('class', (d, k) => {
           // create per-category classes
           const indexClass = `graph__bar--index${k}`;
-          const keyClass = (d.id) ? `graph__bar--${d.id}` : `graph__bar--${d.name}`;
-          return `graph__bar ${indexClass} ${keyClass}`;
+          const inputClass = (d.css) ? ` ${d.css}` : '';
+          return `graph__bar ${indexClass}${inputClass}`;
         });
 
-    // .attr('class', 'graph__rect')
-
-      bar.attr('x', d => xScale(d.name))
+      // todo: add override transition support
+      bar.attr('x', d => xScale(d.text))
         .attr('width', d => xScale.bandwidth())
         .attr('y', height)
         .attr('height', 0)
         .transition()
-          .duration(700)
-          .ease(d3.easeCircle)
-          .attr('height', d => height - yScale(d.value))
-          .attr('y', d => yScale(d.value))
+        .duration(700)
+        .ease(d3.easeCircle)
+        .attr('height', d => height - yScale(d.value))
+        .attr('y', d => yScale(d.value))
+
+      this.onUpdateReset.emit();
     }
   }
-
 }

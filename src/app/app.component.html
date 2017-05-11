@@ -1,5 +1,7 @@
 <h1>
-  {{catInput}}
+  Graph tester
 </h1>
-<button (click)="foo()">hide category by index</button><input ([ngModel])="catindex">
-<app-bar-chart [data]="myData" class="myBarChart"></app-bar-chart>
+<span>Category index (start from 0)</span><input [(ngModel)]="catindex"><br>
+<button (click)="hide()">hide category by index</button>
+<button (click)="changeCss()">change category css by index</button>
+<app-bar-chart [data]="myData" class="myBarChart" [update]="updateFlag" (onUpdateReset)="updateFlagReset()"></app-bar-chart>
