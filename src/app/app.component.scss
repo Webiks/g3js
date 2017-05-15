@@ -1,5 +1,25 @@
 .myBarChart {
   display: block;
   height: 500px;
-  width: 500px;
+  width: 400px;
+  border: 1px solid black;
+}
+/* graph styles */
+* /deep/ .graph_container {
+  height: 100%;
+  width: 100%;
+  .graph {
+    height: 100%;
+    width: 100%;
+    .graph__bar {
+      fill: lightblue;
+    }
+  }
+  svg.graph.graph--bar-chart {
+    rect.graph__bar {
+      &.disabled {
+        fill: lightgray;
+      }
+    }
+  }
 }

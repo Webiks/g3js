@@ -1,7 +1,9 @@
 <h1>
   Graph tester
 </h1>
-<span>Category index (start from 0)</span><input [(ngModel)]="catindex"><br>
-<button (click)="hide()">hide category by index</button>
-<button (click)="changeCss()">change category css by index</button>
-<app-bar-chart [data]="myData" class="myBarChart" [update]="updateFlag" (onUpdateReset)="updateFlagReset()"></app-bar-chart>
+<button (click)="toggleDisabledDisplay()">Hide / Show disabled columns</button>
+<app-bar-chart class="myBarChart"
+               [data]="myData"
+               [config]="chartConfig"
+               [update]="updateFlag"
+               (onClick)="graphClick($event)"></app-bar-chart>
