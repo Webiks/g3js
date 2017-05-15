@@ -2,22 +2,18 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
-import { D3Service } from 'd3-ng2-service';
+import { G3Module } from './g3/g3.module';
 
 import { AppComponent } from './app.component';
-import { BarChartComponent } from './bar-chart/bar-chart.component';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    BarChartComponent
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     FormsModule,
-    HttpModule
+    HttpModule,
+    G3Module
   ],
-  providers: [D3Service],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

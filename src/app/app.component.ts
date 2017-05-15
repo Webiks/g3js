@@ -8,6 +8,7 @@ import {Component} from '@angular/core';
 export class AppComponent {
   updateFlag = [];  // set a new reference to force graph component to update changes
   displayDisabledColumns = true;
+
   // value - set category value (column height, default 0)
   // id - bar rect element id. setDisplay function based on id
   // text - set label
@@ -20,6 +21,7 @@ export class AppComponent {
     {text: '', value: 5},
     {text: 'cat6', value: 20}
   ];
+  activeColumnsNumber = this.myData.length;
   // id - graph id function based on id
   // css - set bar class
   chartConfig = {
@@ -30,13 +32,21 @@ export class AppComponent {
     skipTransitionOnce: false,
     margin: {top: 30, right: 20, bottom: 60, left: 40},
     colorFunction: (d, i) => (d.value > 10) ? 'green' : 'red',
-    axis: {
+    axes: {
       x: {
-        display: true,
-        diagonal: true
+        create: true,
+        diagonal: true,
+        textAnchor: 'end',
+        // access to d3 axis API
+        d3AxisAPI: {
+          tickSize: 8
+        }
       },
       y: {
-        display: true,
+        // access to d3 axis API
+        d3AxisAPI: {
+          tickPadding: 10
+        }
       }
     },
   };
@@ -66,6 +76,7 @@ export class AppComponent {
     if (this.displayDisabledColumns) {
       this.chartConfig.skipTransitionOnce = true;
     }
+    this.activeColumnsNumber = this.myData.filter((d) => d['addToDOM'] !== false).length;
     this.updateFlag = [];
   }
 

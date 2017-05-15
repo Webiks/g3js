@@ -1,9 +1,17 @@
 <h1>
-  Graph tester
+  Graph Demo
 </h1>
-<button (click)="toggleDisabledDisplay()">Hide / Show disabled columns</button>
+<p>
+    <button (click)="toggleDisabledDisplay()">
+      {{displayDisabledColumns?'Hide':'Show'}} Disabled columns
+    </button>
+</p>
 <app-bar-chart class="myBarChart"
                [data]="myData"
                [config]="chartConfig"
                [update]="updateFlag"
                (onClick)="graphClick($event)"></app-bar-chart>
+
+<p>
+  Active columns: {{activeColumnsNumber}} of {{myData.length}}
+</p>
