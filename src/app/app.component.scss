@@ -24,6 +24,18 @@ button {
     width: 100%;
     .graph__bar {
       fill: lightblue;
+      &.bar-yellow {
+        fill: yellow;
+      }
+      &.bar-on-hover-green:hover {
+        fill: green;
+      }
+    }
+    .graph__bar_label {
+      dominant-baseline: ideographic;
+    }
+    .axis-x.diagonal-text {
+      text-anchor: end;
     }
   }
   svg.graph.graph--bar-chart {

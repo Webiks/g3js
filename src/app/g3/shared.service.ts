@@ -27,6 +27,25 @@ export class SharedService {
     return config.margin || SharedService.DEFAULT.margin;
   }
 
+  static getOffset(offset, baseForPercentage) {
+    if (offset === undefined) {
+      return 0;
+    }
+    let result;
+    switch (typeof offset) {
+      case 'number':
+        result = offset;
+        break;
+      case 'string':
+        result = parseInt(offset, 10);
+          if (offset[offset.length - 1] === '%') {
+            result = result / 100 * baseForPercentage;
+        }
+        break;
+    }
+    return result;
+  }
+
   static createAxis(axisKey: string, position: string, scale, containerData, config) {
     if (!config.axes || !config.axes[axisKey]) {
       return;
@@ -47,32 +66,26 @@ export class SharedService {
           break;
       }
       // invoke d3 Axis API
-      // if (axisConfig.d3AxisAPI) {
         for (const prop in axisConfig.d3AxisAPI) {
           if (axisConfig.d3AxisAPI.hasOwnProperty(prop)) {
             axisElement[prop](axisConfig.d3AxisAPI[prop]);
           }
-        // }
-        // axisElement.tickPadding(axisConfig.tickPadding);
-        // axisElement.tickSize(0);
       }
       // add axis
+      let axisCssClass = `axis-${axisKey}`;
       const axisG = containerData.container.append('g');
+      // add position transformation
       if (transformString) {
         axisG.attr('transform', transformString);
       }
-
       axisG.call(axisElement);
-      if (axisConfig.diagonal) {
-        // console.log('diagonales', axisG.selectAll('text'))
+      // add text diagonal transformation
+      if (axisConfig.diagonalText) {
         axisG.selectAll('text')
-          // .style('text-anchor', 'end')
           .attr('transform', 'rotate(-45)');
+          axisCssClass += ' diagonal-text';
       }
-      if (axisConfig.textAnchor) {
-        axisG.selectAll('text')
-          .style('text-anchor', axisConfig.textAnchor);
-      }
+      axisG.attr('class', axisCssClass);
     }
   }
 
