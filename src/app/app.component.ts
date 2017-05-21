@@ -21,7 +21,8 @@ export class AppComponent {
     {text: 'cat4', value: 3},
     {text: 'cat5', value: 5, css: 'bar-yellow bar-on-hover-green'},
     {text: 'cat6', value: 0},
-    {text: 'cat7', value: 20}
+    {text: 'cat7', value: 20},
+    {text: 'cat8', value: 8}
   ];
   activeColumnsNumber = this.myData.length;
   // == all properties are optional ==
@@ -34,13 +35,13 @@ export class AppComponent {
   // colorFunction - set color function
   // label - top column label
   // axes - create(flag), diagonalText (flag), d3AxisAPI (see D3 API)
-  chartConfig = {
+  barChartConfig = {
     id: '',
     css: '',
     transitionTime: '',
     filterDataFunction: (d) => this.displayDisabledColumns || d.addToDOM !== false,
     skipTransitionOnce: false,
-    margin: {top: 30, right: 20, bottom: 60, left: 40},
+    margin: {top: 10, right: 20, bottom: 60, left: 40},
     colorFunction: (d, i) => (d.value > 10) ? 'green' : 'red',
     label: {
       create: true,
@@ -64,15 +65,50 @@ export class AppComponent {
       }
     },
   };
+
+  pieChartConfig = {
+    id: '',
+    css: '',
+    transitionTime: '',
+    filterDataFunction: (d) => this.displayDisabledColumns || d.addToDOM !== false,
+    skipTransitionOnce: false,
+    margin: 20,
+    colorFunction: (d, i) => {
+      let color = 'rgb(27, 192, 201)';
+      if(d.value > 4) {
+        color = 'rgb(49, 130, 189)';
+      }
+      if(d.value > 10) {
+        color = 'rgb(107, 174, 214)';
+      }
+      if(d.value > 10) {
+        color = 'rgb(158, 202, 225)';
+      }
+      return color;
+    },
+    // label: {
+    //   create: true,
+    //   xOffset: '38%',
+    //   yOffset: 25
+    // },
+  };
+
   // graph click
-  graphClick(event) {
+  barChartClick(event) {
     if (event.target.tagName === 'rect') {
       this.barClick(event);
     } else {
       console.log('some click event', event);
     }
   }
-  // graph - bar click
+
+  // === pie-chart events ===//
+  pieChartClick() {
+
+  }
+
+  // === bar-chart events ===//
+  // bar-chart - bar click
   barClick(event) {
     console.log(event.target);
     let newClass;
@@ -88,7 +124,7 @@ export class AppComponent {
     }
     event.data.css = newClass;
     if (this.displayDisabledColumns) {
-      this.chartConfig.skipTransitionOnce = true;
+      this.barChartConfig.skipTransitionOnce = true;
     }
     this.activeColumnsNumber = this.myData.filter((d) => d['addToDOM'] !== false).length;
     this.updateFlag = [];

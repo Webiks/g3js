@@ -6,11 +6,18 @@
       {{displayDisabledColumns?'Hide':'Show'}} Disabled columns
     </button>
 </p>
+
+<app-pie-chart class="myPieChart"
+              [data]="myData"
+              [config]="pieChartConfig"
+              [update]="updateFlag"
+              (onClick)="pieChartClick($event)"></app-pie-chart>
+
 <app-bar-chart class="myBarChart"
                [data]="myData"
-               [config]="chartConfig"
+               [config]="barChartConfig"
                [update]="updateFlag"
-               (onClick)="graphClick($event)"></app-bar-chart>
+               (onClick)="barChartClick($event)"></app-bar-chart>
 
 <p>
   Active columns: {{activeColumnsNumber}} of {{myData.length}}

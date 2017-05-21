@@ -24,6 +24,7 @@ export class BarChartComponent implements OnChanges {
   }
   ngOnChanges() {
     if (this.data) {
+      let data = SharedService.getData(this.data, this.config);
       const transitionDuration = SharedService.getTransitionDuration(this.config);
       const d3 = BarChartComponent.d3;
       const d3ParentElement = d3.select(this.parentElement.nativeElement);
@@ -36,18 +37,14 @@ export class BarChartComponent implements OnChanges {
         .call(this.sharedService.responsivefy);
       // create metric
       const parentMatric: ClientRect = (<HTMLElement>svg.node()).getBoundingClientRect();
-      const margin = SharedService.getMargin(this.config.margin);
+      const margin = SharedService.getMargin(this.config);
       const width = parentMatric.width - margin.left - margin.right;
       const height = parentMatric.height - margin.top - margin.bottom;
 
       const mainG = svg.append('g')
+        // move bars area according to margin
         .attr('transform', `translate(${margin.left},${margin.top})`);
 
-      // extract data (filter if needed)
-      let data = this.data;
-      if (this.config.filterDataFunction && typeof this.config.filterDataFunction === 'function') {
-        data = data.filter((d) => this.config.filterDataFunction(d));
-      }
       // create y scale
       const maxYValue = d3.max(data, d => d.value);
       const yScale = d3.scaleLinear()
@@ -83,7 +80,10 @@ export class BarChartComponent implements OnChanges {
           const inputClass = (d.css) ? ` ${d.css}` : '';
           return `graph__bar ${indexClass}${inputClass}`;
         });
-      bars.attr('fill', (d, k) => this.config.colorFunction(d, k));
+      // fill by color function
+      if(this.config.colorFunction) {
+        bars.attr('fill', (d, k) => this.config.colorFunction(d, k));
+      }
       // add tooltip
       bars.append('title').text((d) => (d.text) ? `${d.text} : ${d.value}` : d.value);
       // add bar click event

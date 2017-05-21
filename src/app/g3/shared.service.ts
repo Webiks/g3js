@@ -13,6 +13,13 @@ export class SharedService {
       context.onClick.emit({data, index, elements, 'target': elements[index]});
     });
   }
+  static getData(data: any[], config): any[] {
+    // extract data (filter if needed)
+    if (config.filterDataFunction && typeof config.filterDataFunction === 'function') {
+      data = data.filter((d) => config.filterDataFunction(d));
+    }
+    return data;
+  }
   static getTransitionDuration(config) {
     let duration = SharedService.DEFAULT.transitionTime;
     if (config.skipTransitionOnce) {

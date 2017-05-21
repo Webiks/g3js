@@ -24,73 +24,68 @@ export class PieChartComponent implements OnChanges {
   }
   ngOnChanges() {
     if (this.data) {
+      let data = SharedService.getData(this.data, this.config);
       const transitionDuration = SharedService.getTransitionDuration(this.config);
       const d3 = PieChartComponent.d3;
       const d3ParentElement = d3.select(this.parentElement.nativeElement);
       const graphClass = (this.config.css) ? this.config.css : '';
+      // create graph main SVG element
       const svg = d3ParentElement.html('')
         .append('svg')
+        .attr('id', this.config.id)
         .attr('class', `graph graph--pie-chart ${graphClass}`)
         .call(this.sharedService.responsivefy);
+      // create metric
       const parentMatric: ClientRect = (<HTMLElement>svg.node()).getBoundingClientRect();
-      const margin = SharedService.getMargin(this.config.margin);
-      const width = parentMatric.width - margin.left - margin.right;
-      const height = parentMatric.height - margin.top - margin.bottom;
+
+      const margin = SharedService.getMargin(this.config);
+      const width = parentMatric.width - margin*2;
+      const height = parentMatric.height - margin*2;
+      const radius = Math.min(width,height) / 2;
 
       const mainG = svg.append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
+      // move the center of the pie chart from 0,0 to radius,radius
+        .attr('height', height)
+        .attr('width', width)
+        .attr('transform',`translate(${parentMatric.width/2},${parentMatric.height/2})`);
 
+      // to define the radius
+      var arc = d3.arc()
+        .innerRadius(0)
+        .outerRadius(radius);
 
-      let data = this.data;
-      if (this.config.filterDataFunction && typeof this.config.filterDataFunction === 'function') {
-        data = data.filter((d) => this.config.filterDataFunction(d));
-      }
-      // y scale
-      const maxYValue = d3.max(data, d => d.value);
-      const yScale = d3.scaleLinear()
-        .domain([0, maxYValue])
-        .range([height, 0]);
-      // todo: extern tick?
+      // for the start and end angles of the segments
+      var pie = d3.pie()
+        .value(d => (<any>d).value) // <any> to ignore typing
+        .sort(null);  // no sort
 
-      const containerAxisData = {
-        container: mainG,
-        height: height,
-        width: width
-      };
-      SharedService.createAxis('y', 'left', yScale, containerAxisData, this.config);
-
-      // x scale
-      const xScale = d3.scaleBand()
-        .padding(0.2)
-        .domain(data.map(d => d.text))
-        .range([0, width]);
-
-      SharedService.createAxis('x', 'bottom', xScale, containerAxisData, this.config);
-      // const xAxis = d3.axisBottom(xScale);
-
-      const bar = mainG.selectAll('rect')
-        .data(data)
+      var segments = mainG.selectAll('path')
+        .data(pie(data))
         .enter()
-        .append('rect')
-        .attr('class', (d, k) => {
-          // create per-category classes
-          const indexClass = `graph__bar--index${k}`;
-          const inputClass = (d.css) ? ` ${d.css}` : '';
-          return `graph__bar ${indexClass}${inputClass}`;
-        });
-      bar.attr('fill', (d, k) => this.config.colorFunction(d, k));
-      // add bar click event
-      SharedService.addOnClick(bar, this);
+        .append('path')
+        .attr('d', <any>arc); // <any> to ignore typing
+        // .attr('fill', 'red')
 
-      bar.attr('x', d => xScale(d.text))
-        .attr('width', d => xScale.bandwidth())
-        .attr('y', height)
-        .attr('height', 0)
-        .transition()
-        .duration(transitionDuration)
-        .ease(d3.easeCircle)
-        .attr('height', d => height - yScale(d.value))
-        .attr('y', d => yScale(d.value));
+      // fill by color function
+      if(this.config.colorFunction) {
+        segments.attr('fill', (d, k) => this.config.colorFunction(d, k));
+      }
+
+      //todo:
+      // add classes
+      // .attr('class', (d, k) => {
+      //   // create per-category classes
+      //   const indexClass = `graph__pie--index${k}`;
+      //   const inputClass = (d.css) ? ` ${d.css}` : '';
+      //   return `graph__pie ${indexClass}${inputClass}`;
+
+      // // add tooltip
+      // pies.append('title').text((d) => (d.text) ? `${d.text} : ${d.value}` : d.value);
+      // // add pie click event
+      // SharedService.addOnClick(pies, this);
+
+      // add pies transition
+      // add labels
     }
   }
 }
