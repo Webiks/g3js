@@ -13,10 +13,12 @@ import {SharedService} from 'app/g3/shared.service';
 export class PieChartComponent implements OnChanges {
 
   private static d3: D3;
+  arc: any;
   @Input() data: any[];
   @Input() config: any;
   @Input() update: any;
   @Output() onClick = new EventEmitter<any>();
+  @Output() onDone = new EventEmitter<any>();
   @ViewChild('graphContainer') parentElement: ElementRef;
 
   constructor(d3Service: D3Service, private sharedService: SharedService) {
@@ -24,68 +26,68 @@ export class PieChartComponent implements OnChanges {
   }
   ngOnChanges() {
     if (this.data) {
-      let data = SharedService.getData(this.data, this.config);
+      const data = SharedService.getData(this.config, this.data);
       const transitionDuration = SharedService.getTransitionDuration(this.config);
       const d3 = PieChartComponent.d3;
       const d3ParentElement = d3.select(this.parentElement.nativeElement);
-      const graphClass = (this.config.css) ? this.config.css : '';
       // create graph main SVG element
-      const svg = d3ParentElement.html('')
-        .append('svg')
-        .attr('id', this.config.id)
-        .attr('class', `graph graph--pie-chart ${graphClass}`)
-        .call(this.sharedService.responsivefy);
+      const svg = SharedService.createMainSVG(this.config, d3ParentElement, 'pie-chart');
       // create metric
-      const parentMatric: ClientRect = (<HTMLElement>svg.node()).getBoundingClientRect();
-
+      const parentMatric = (<HTMLElement>svg.node()).getBoundingClientRect();
       const margin = SharedService.getMargin(this.config);
-      const width = parentMatric.width - margin*2;
-      const height = parentMatric.height - margin*2;
-      const radius = Math.min(width,height) / 2;
+      const width = parentMatric.width - margin * 2;
+      const height = parentMatric.height - margin * 2;
+      const radius = Math.min(width, height) / 2;
+      const donutWidth = (this.config.donutWidth) ? this.config.donutWidth : 0;
 
       const mainG = svg.append('g')
       // move the center of the pie chart from 0,0 to radius,radius
         .attr('height', height)
         .attr('width', width)
-        .attr('transform',`translate(${parentMatric.width/2},${parentMatric.height/2})`);
+        .attr('transform', `translate(${parentMatric.width / 2},${parentMatric.height / 2})`);
+
 
       // to define the radius
-      var arc = d3.arc()
-        .innerRadius(0)
-        .outerRadius(radius);
+      this.arc = d3.arc()
+        .innerRadius(radius - donutWidth)
+        .outerRadius(radius)
+        // .startAngle(0)
+        .padAngle(0.01)
+        .cornerRadius(3);
 
       // for the start and end angles of the segments
-      var pie = d3.pie()
+      const pie = d3.pie()
         .value(d => (<any>d).value) // <any> to ignore typing
         .sort(null);  // no sort
 
-      var segments = mainG.selectAll('path')
+      const pieSlices = <any>mainG.selectAll('path')
         .data(pie(data))
         .enter()
         .append('path')
-        .attr('d', <any>arc); // <any> to ignore typing
-        // .attr('fill', 'red')
+        .attr('class', (d, k) => SharedService.getSegmentCssClass('pie_slice', d.data, k))
+        .attr('fill', (d, k) => this.config.colorFunction(d, k));
 
-      // fill by color function
-      if(this.config.colorFunction) {
-        segments.attr('fill', (d, k) => this.config.colorFunction(d, k));
-      }
+      // add pie-slices on-click event
+      SharedService.addOnClick(pieSlices, this);
 
-      //todo:
-      // add classes
-      // .attr('class', (d, k) => {
-      //   // create per-category classes
-      //   const indexClass = `graph__pie--index${k}`;
-      //   const inputClass = (d.css) ? ` ${d.css}` : '';
-      //   return `graph__pie ${indexClass}${inputClass}`;
 
-      // // add tooltip
-      // pies.append('title').text((d) => (d.text) ? `${d.text} : ${d.value}` : d.value);
-      // // add pie click event
-      // SharedService.addOnClick(pies, this);
+      // add tooltip
+      pieSlices.append('title').text((d) => {
+        return (d.data.text) ? `${d.data.text} : ${d.value}` : d.value;
+      });
+      // add pie-slices transition
+      pieSlices.transition()
+        .ease(d3.easeCubicInOut)
+        .duration(transitionDuration)
+        .attrTween('d', this.tweenPie.bind(this));
 
-      // add pies transition
-      // add labels
+      // emit "done" event
+      this.onDone.emit(svg);
     }
+
+  }
+  tweenPie(b) {
+    const i = PieChartComponent.d3.interpolate({startAngle: 0, endAngle: 0}, b);
+    return (t) => this.arc(i(t));
   }
 }

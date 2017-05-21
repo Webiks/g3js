@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core';
 import { D3, D3Service } from 'd3-ng2-service';
 
+/*
+ * todo: chartes components should implement interface
+ * which include all important sharedService methods
+ * */
 @Injectable()
 export class SharedService {
   private static d3: D3;
@@ -9,11 +13,13 @@ export class SharedService {
     margin: {top: 30, right: 0, bottom: 60, left: 40}
   };
   static addOnClick(element, context) {
-    element.on('click', (data, index, elements) => {
-      context.onClick.emit({data, index, elements, 'target': elements[index]});
-    });
+    if (context.onClick) {
+      element.on('click', (data, index, elements) => {
+        context.onClick.emit({data, index, elements, 'target': elements[index]});
+      });
+    }
   }
-  static getData(data: any[], config): any[] {
+  static getData(config, data: any[]): any[] {
     // extract data (filter if needed)
     if (config.filterDataFunction && typeof config.filterDataFunction === 'function') {
       data = data.filter((d) => config.filterDataFunction(d));
@@ -34,6 +40,13 @@ export class SharedService {
     return config.margin || SharedService.DEFAULT.margin;
   }
 
+  static getSegmentCssClass(segmentType, data, index) {
+      // create per-category classes
+      const indexClass = `graph__${segmentType}--index${index}`;
+      const inputClass = (data.css) ? ` ${data.css}` : '';
+      return `graph__${segmentType} ${indexClass}${inputClass}`;
+  }
+
   static getOffset(offset, baseForPercentage) {
     if (offset === undefined) {
       return 0;
@@ -52,7 +65,14 @@ export class SharedService {
     }
     return result;
   }
-
+  static createMainSVG(config, parentElement, graphType) {
+    const graphClass = (config.css) ? config.css : '';
+    return parentElement.html('')
+      .append('svg')
+      .attr('id', config.id)
+      .attr('class', `graph graph--${graphType} ${graphClass}`)
+      .call(SharedService.responsivefy);
+  }
   static createAxis(axisKey: string, position: string, scale, containerData, config) {
     if (!config.axes || !config.axes[axisKey]) {
       return;
@@ -95,15 +115,10 @@ export class SharedService {
       axisG.attr('class', axisCssClass);
     }
   }
-
-  constructor(d3Service: D3Service) {
-    SharedService.d3 = d3Service.getD3();
-  }
-
-  // add responsive support for d3
+// add responsive support for d3
   // This function is based on code published by brendan sudol
   // https://brendansudol.com/writing/responsive-d3
-  responsivefy(svg) {
+  static responsivefy(svg) {
     const d3 = SharedService.d3;
     // get container + svg aspect ratio
     const container = d3.select(svg.node().parentNode),
@@ -126,5 +141,8 @@ export class SharedService {
       svg.attr('width', targetWidth);
       svg.attr('height', Math.round(targetWidth / aspect));
     }
+  }
+  constructor(d3Service: D3Service) {
+    SharedService.d3 = d3Service.getD3();
   }
 }

@@ -8,6 +8,7 @@ import {Component} from '@angular/core';
 export class AppComponent {
   updateFlag = [];  // set a new reference to force graph component to update changes
   displayDisabledColumns = true;
+  barChartIsDone = false;
   // == all properties are optional ==
   // value - set category value (column height, default 0)
   // id - bar rect element id. setDisplay function based on id
@@ -19,7 +20,7 @@ export class AppComponent {
     {text: 'cat2', value: 10},
     {text: 'cat3', value: 12},
     {text: 'cat4', value: 3},
-    {text: 'cat5', value: 5, css: 'bar-yellow bar-on-hover-green'},
+    {text: 'cat5', value: 5, css: 'segment-special segment-special-on-hover'},
     {text: 'cat6', value: 0},
     {text: 'cat7', value: 20},
     {text: 'cat8', value: 8}
@@ -66,6 +67,7 @@ export class AppComponent {
     },
   };
 
+  // donutWidth - make it a donut instead of a pie by giving it value bigger than 0
   pieChartConfig = {
     id: '',
     css: '',
@@ -73,15 +75,16 @@ export class AppComponent {
     filterDataFunction: (d) => this.displayDisabledColumns || d.addToDOM !== false,
     skipTransitionOnce: false,
     margin: 20,
-    colorFunction: (d, i) => {
+    donutWidth: 30,
+    colorFunction: (d) => {
       let color = 'rgb(27, 192, 201)';
-      if(d.value > 4) {
+      if (d.value > 4) {
         color = 'rgb(49, 130, 189)';
       }
-      if(d.value > 10) {
+      if (d.value > 10) {
         color = 'rgb(107, 174, 214)';
       }
-      if(d.value > 10) {
+      if (d.value > 10) {
         color = 'rgb(158, 202, 225)';
       }
       return color;
@@ -96,42 +99,55 @@ export class AppComponent {
   // graph click
   barChartClick(event) {
     if (event.target.tagName === 'rect') {
-      this.barClick(event);
+      this.toggleDataEntry(event, event.data);
     } else {
-      console.log('some click event', event);
+      console.log('some element was clicked in bar chart', event);
     }
   }
 
   // === pie-chart events ===//
-  pieChartClick() {
-
+  pieChartClick(event) {
+    this.toggleDataEntry(event, event.data.data);
+    console.log('some pie-slice click event', event);
   }
 
   // === bar-chart events ===//
   // bar-chart - bar click
-  barClick(event) {
+  toggleDataEntry(event, data) {
     console.log(event.target);
     let newClass;
-    if (!event.data.css) {
-      event.data.css = '';
+    if (!data.css) {
+      data.css = '';
     }
-    if (event.data.css.indexOf('disabled') === -1) {
-      newClass = event.data.css + ' disabled';
-      event.data['addToDOM'] = false;
+    if (data.css.indexOf('disabled') === -1) {
+      newClass = data.css + ' disabled';
+      data['addToDOM'] = false;
     } else {
-      newClass = event.data.css.replace(' disabled', '');
-      event.data['addToDOM'] = undefined;
+      newClass = data.css.replace(' disabled', '');
+      data['addToDOM'] = undefined;
     }
-    event.data.css = newClass;
-    if (this.displayDisabledColumns) {
-      this.barChartConfig.skipTransitionOnce = true;
-    }
+    data.css = newClass;
+
     this.activeColumnsNumber = this.myData.filter((d) => d['addToDOM'] !== false).length;
-    this.updateFlag = [];
+    this.updateGraphs(!this.displayDisabledColumns);
   }
 
+  barChartDone() {
+    setTimeout(() => this.barChartIsDone = true);
+  }
   toggleDisabledDisplay() {
     this.displayDisabledColumns = !this.displayDisabledColumns ;
+    this.updateGraphs(true);
+  }
+  updateGraphs(useAnimation) {
+    if (useAnimation) {
+      // for bar-chart done class
+      this.barChartIsDone = false;
+    } else {
+      // to skip animation
+      this.barChartConfig.skipTransitionOnce = true;
+      this.pieChartConfig.skipTransitionOnce = true;
+    }
     this.updateFlag = [];
   }
 }

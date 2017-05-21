@@ -17,6 +17,7 @@ export class BarChartComponent implements OnChanges {
   @Input() config: any;
   @Input() update: any;
   @Output() onClick = new EventEmitter<any>();
+  @Output() onDone = new EventEmitter<any>();
   @ViewChild('graphContainer') parentElement: ElementRef;
 
   constructor(d3Service: D3Service, private sharedService: SharedService) {
@@ -24,20 +25,18 @@ export class BarChartComponent implements OnChanges {
   }
   ngOnChanges() {
     if (this.data) {
-      let data = SharedService.getData(this.data, this.config);
+      const data = SharedService.getData(this.config, this.data);
+      const margin = SharedService.getMargin(this.config);
       const transitionDuration = SharedService.getTransitionDuration(this.config);
       const d3 = BarChartComponent.d3;
       const d3ParentElement = d3.select(this.parentElement.nativeElement);
-      const graphClass = (this.config.css) ? this.config.css : '';
+
       // create graph main SVG element
-      const svg = d3ParentElement.html('')
-        .append('svg')
-        .attr('id', this.config.id)
-        .attr('class', `graph graph--bar-chart ${graphClass}`)
-        .call(this.sharedService.responsivefy);
+      const svg = SharedService.createMainSVG(this.config, d3ParentElement, 'bar-chart');
+
       // create metric
-      const parentMatric: ClientRect = (<HTMLElement>svg.node()).getBoundingClientRect();
-      const margin = SharedService.getMargin(this.config);
+      const parentMatric = (<HTMLElement>svg.node()).getBoundingClientRect();
+
       const width = parentMatric.width - margin.left - margin.right;
       const height = parentMatric.height - margin.top - margin.bottom;
 
@@ -74,14 +73,9 @@ export class BarChartComponent implements OnChanges {
       // add columns - bars (rects elements)
       const bars = barContainers .append('rect')
         .attr('id', d => d.id)
-        .attr('class', (d, k) => {
-          // create per-category classes
-          const indexClass = `graph__bar--index${k}`;
-          const inputClass = (d.css) ? ` ${d.css}` : '';
-          return `graph__bar ${indexClass}${inputClass}`;
-        });
+        .attr('class', (d, k) => SharedService.getSegmentCssClass('bar', d, k));
       // fill by color function
-      if(this.config.colorFunction) {
+      if (this.config.colorFunction) {
         bars.attr('fill', (d, k) => this.config.colorFunction(d, k));
       }
       // add tooltip
@@ -121,6 +115,8 @@ export class BarChartComponent implements OnChanges {
             const max = height - labelYOffset;
             return(res < max) ? res : max;
           });
+        // emit "done" event
+        this.onDone.emit(svg);
       }
     }
   }

@@ -22,34 +22,62 @@ button {
   width: 400px;
   border: 1px solid black;
 }
-/* graph styles */
+/* all graphs */
 * /deep/ .graph_container {
   height: 100%;
   width: 100%;
   .graph {
     height: 100%;
     width: 100%;
-    .graph__bar {
-      fill: lightblue;
-      &.bar-yellow {
+    g .graph__bar, g .graph__pie_slice{
+      &.segment-special {
         fill: yellow;
       }
-      &.bar-on-hover-green:hover {
-        fill: green;
+      &.segment-special-on-hover:hover {
+        fill: palegreen;
       }
+    }
+  }
+}
+/* pie-chart styles */
+.myPieChart /deep/ .graph_container {
+  .graph {
+    .graph__pie_slice {
+      stroke: white;
+      &.disabled {
+        fill: lightgray;
+      }
+    }
+
+  }
+}
+
+/* bar-chart styles */
+.myBarChart /deep/ .graph_container {
+  .graph {
+    .graph__bar {
+      fill: lightblue;
+      &.disabled {
+        fill: lightgray;
+      }
+
     }
     .graph__bar_label {
       dominant-baseline: ideographic;
+        /* for fade-in */
+        opacity: 0.15;
     }
     .axis-x.diagonal-text {
       text-anchor: end;
     }
   }
-  svg.graph.graph--bar-chart {
-    rect.graph__bar {
-      &.disabled {
-        fill: lightgray;
-      }
+}
+
+.myBarChart.done /deep/ .graph_container {
+  .graph{
+    .graph__bar_label {
+      transition: opacity 3000ms;
+      opacity: 1.0;
     }
   }
 }

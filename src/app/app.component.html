@@ -14,9 +14,11 @@
               (onClick)="pieChartClick($event)"></app-pie-chart>
 
 <app-bar-chart class="myBarChart"
+               [ngClass]="{'done':barChartIsDone}"
                [data]="myData"
                [config]="barChartConfig"
                [update]="updateFlag"
+               (onDone)="barChartDone($event)"
                (onClick)="barChartClick($event)"></app-bar-chart>
 
 <p>
