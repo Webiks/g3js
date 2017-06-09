@@ -37,7 +37,7 @@ export class SharedService {
     return duration;
   }
   static getMargin(config) {
-    return config.margin || SharedService.DEFAULT.margin;
+    return  (typeof config.margin !== 'undefined') ? config.margin : SharedService.DEFAULT.margin;
   }
 
   static getSegmentCssClass(segmentType, data, index) {

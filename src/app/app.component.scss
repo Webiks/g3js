@@ -11,8 +11,8 @@ button {
 }
 .myPieChart {
   display: block;
-  height: 300px;
-  width: 300px;
+  height: 500px;
+  width: 600px;
   border: 1px solid black;
   margin-bottom: 20px;
 }
@@ -47,6 +47,12 @@ button {
       &.disabled {
         fill: lightgray;
       }
+    }
+    .graph__pie_line {
+      opacity: .3;
+      stroke: black;
+      stroke-width: 2px;
+      fill: none;
     }
 
   }

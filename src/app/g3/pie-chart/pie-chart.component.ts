@@ -14,6 +14,9 @@ export class PieChartComponent implements OnChanges {
 
   private static d3: D3;
   arc: any;
+  outerArc: any;
+  radius: number;
+
   @Input() data: any[];
   @Input() config: any;
   @Input() update: any;
@@ -37,7 +40,7 @@ export class PieChartComponent implements OnChanges {
       const margin = SharedService.getMargin(this.config);
       const width = parentMatric.width - margin * 2;
       const height = parentMatric.height - margin * 2;
-      const radius = Math.min(width, height) / 2;
+      const radius = this.radius = Math.min(width, height) / 2;
       const donutWidth = (this.config.donutWidth) ? this.config.donutWidth : 0;
 
       const mainG = svg.append('g')
@@ -49,18 +52,28 @@ export class PieChartComponent implements OnChanges {
 
       // to define the radius
       this.arc = d3.arc()
-        .innerRadius(radius - donutWidth)
-        .outerRadius(radius)
+        .innerRadius(radius * 0.7 - donutWidth)
+        .outerRadius(radius * 0.7)
         // .startAngle(0)
         .padAngle(0.01)
         .cornerRadius(3);
+
+      this.outerArc = d3.arc()
+        .innerRadius(radius * 0.9)
+        .outerRadius(radius * 0.9);
 
       // for the start and end angles of the segments
       const pie = d3.pie()
         .value(d => (<any>d).value) // <any> to ignore typing
         .sort(null);  // no sort
 
-      const pieSlices = <any>mainG.selectAll('path')
+      // add all group elements
+      mainG.append('g').attr('class', 'slices');
+      mainG.append('g').attr('class', 'labels');
+      mainG.append('g').attr('class', 'lines');
+
+      /* ------- slices -------*/
+      const pieSlices = <any>mainG.select('.slices').selectAll('path')
         .data(pie(data))
         .enter()
         .append('path')
@@ -69,7 +82,6 @@ export class PieChartComponent implements OnChanges {
 
       // add pie-slices on-click event
       SharedService.addOnClick(pieSlices, this);
-
 
       // add tooltip
       pieSlices.append('title').text((d) => {
@@ -81,10 +93,69 @@ export class PieChartComponent implements OnChanges {
         .duration(transitionDuration)
         .attrTween('d', this.tweenPie.bind(this));
 
+      /* ------- Labels -------*/
+      const pieLabels = svg.select('.labels').selectAll('text')
+        .data(pie(data));
+
+      const pieLabelsText = pieLabels.enter()
+        .append('text')
+        .attr('dy', '.35em')
+        .text((d) => (d.data.value) ? d.data.text : null);
+
+      pieLabelsText.transition()
+        .duration(transitionDuration)
+        .attrTween('transform', this.tweenLabel.bind(this))
+
+      .styleTween('text-anchor', this.tweenLabelTextAnchor.bind(this));
+      /* ------- Labels lines -------*/
+      const pieLabelsLines = svg.select('.lines').selectAll('polyline')
+        .data(pie(data));
+
+      const pieLabelsLines2 = pieLabelsLines.enter()
+        .append('polyline')
+        .attr('class', (d, k) => SharedService.getSegmentCssClass('pie_line', d.data, k));
+
+
+      const arc = this.arc;
+      const outerArc = this.outerArc;
+      const midAngle = this.midAngle;
+      pieLabelsLines2.transition().duration(1000)
+        .attrTween('points', function(d){
+          this._current = this._current || d;
+          const interpolate = d3.interpolate(this._current, d);
+          this._current = interpolate(0);
+          return (t) => {
+            const d2 = interpolate(t);
+            const pos = outerArc.centroid(d2);
+            pos[0] = radius * 0.95 * (midAngle(d2) < Math.PI ? 1 : -1);
+            return [arc.centroid(d2), outerArc.centroid(d2), pos];
+          };
+        });
+
       // emit "done" event
       this.onDone.emit(svg);
     }
 
+  }
+  midAngle(d) {
+    return d.startAngle + (d.endAngle - d.startAngle) / 2;
+  }
+
+  tweenLabel(d) {
+    const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
+    return (t) => {
+      const d2 = interpolate(t);
+      const pos = this.outerArc.centroid(d2);
+      pos[0] = this.radius * (this.midAngle(d2) < Math.PI ? 1 : -1);
+      return `translate(${pos})`;
+    };
+  }
+  tweenLabelTextAnchor(d) {
+    const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
+    return (t) => {
+      const d2 = interpolate(t);
+      return this.midAngle(d2) < Math.PI ? 'start' : 'end';
+    };
   }
   tweenPie(b) {
     const i = PieChartComponent.d3.interpolate({startAngle: 0, endAngle: 0}, b);

@@ -74,7 +74,7 @@ export class AppComponent {
     transitionTime: '',
     filterDataFunction: (d) => this.displayDisabledColumns || d.addToDOM !== false,
     skipTransitionOnce: false,
-    margin: 20,
+    margin: 0,
     donutWidth: 30,
     colorFunction: (d) => {
       let color = 'rgb(27, 192, 201)';
