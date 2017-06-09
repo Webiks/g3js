@@ -11,8 +11,8 @@ button {
 }
 .myPieChart {
   display: block;
-  height: 500px;
-  width: 600px;
+  height: 300px;
+  width: 400px;
   border: 1px solid black;
   margin-bottom: 20px;
 }
@@ -49,12 +49,28 @@ button {
       }
     }
     .graph__pie_line {
-      opacity: .3;
+      /* for fade-in */
+      opacity: .0;
       stroke: black;
       stroke-width: 2px;
       fill: none;
     }
-
+    .graph__pie_label {
+      /* for fade-in */
+      opacity: .0;
+    }
+  }
+}
+.myPieChart.done /deep/ .graph_container {
+  .graph{
+    .graph__pie_line {
+      transition: opacity 1500ms;
+      opacity: .3;
+    }
+    .graph__pie_label {
+      transition: opacity 1500ms;
+      opacity: 1.0;
+    }
   }
 }
 
@@ -70,8 +86,9 @@ button {
     }
     .graph__bar_label {
       dominant-baseline: ideographic;
-        /* for fade-in */
-        opacity: 0.15;
+      /* for fade-in */
+      opacity: 0.15;
+      text-anchor: middle;
     }
     .axis-x.diagonal-text {
       text-anchor: end;
@@ -82,7 +99,7 @@ button {
 .myBarChart.done /deep/ .graph_container {
   .graph{
     .graph__bar_label {
-      transition: opacity 3000ms;
+      transition: opacity 1500ms;
       opacity: 1.0;
     }
   }

@@ -8,7 +8,7 @@ import {Component} from '@angular/core';
 export class AppComponent {
   updateFlag = [];  // set a new reference to force graph component to update changes
   displayDisabledColumns = true;
-  barChartIsDone = false;
+  graphsAreDone = false;
   // == all properties are optional ==
   // value - set category value (column height, default 0)
   // id - bar rect element id. setDisplay function based on id
@@ -46,7 +46,7 @@ export class AppComponent {
     colorFunction: (d, i) => (d.value > 10) ? 'green' : 'red',
     label: {
       create: true,
-      xOffset: '38%',
+      xOffset: '50%',
       yOffset: 25
     },
     axes: {
@@ -133,7 +133,7 @@ export class AppComponent {
   }
 
   barChartDone() {
-    setTimeout(() => this.barChartIsDone = true);
+    setTimeout(() => this.graphsAreDone = true);
   }
   toggleDisabledDisplay() {
     this.displayDisabledColumns = !this.displayDisabledColumns ;
@@ -141,8 +141,8 @@ export class AppComponent {
   }
   updateGraphs(useAnimation) {
     if (useAnimation) {
-      // for bar-chart done class
-      this.barChartIsDone = false;
+      // for graph done class
+      this.graphsAreDone = false;
     } else {
       // to skip animation
       this.barChartConfig.skipTransitionOnce = true;

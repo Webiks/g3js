@@ -8,13 +8,14 @@
 </p>
 
 <app-pie-chart class="myPieChart"
+              [ngClass]="{'done':graphsAreDone}"
               [data]="myData"
               [config]="pieChartConfig"
               [update]="updateFlag"
               (onClick)="pieChartClick($event)"></app-pie-chart>
 
 <app-bar-chart class="myBarChart"
-               [ngClass]="{'done':barChartIsDone}"
+               [ngClass]="{'done':graphsAreDone}"
                [data]="myData"
                [config]="barChartConfig"
                [update]="updateFlag"

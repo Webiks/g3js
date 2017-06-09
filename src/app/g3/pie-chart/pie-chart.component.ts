@@ -99,6 +99,7 @@ export class PieChartComponent implements OnChanges {
 
       const pieLabelsText = pieLabels.enter()
         .append('text')
+        .attr('class', (d, k) => SharedService.getSegmentCssClass('pie_label', d.data, k))
         .attr('dy', '.35em')
         .text((d) => (d.data.value) ? d.data.text : null);
 
@@ -107,58 +108,65 @@ export class PieChartComponent implements OnChanges {
         .attrTween('transform', this.tweenLabel.bind(this))
 
       .styleTween('text-anchor', this.tweenLabelTextAnchor.bind(this));
+
+      // add pie labels on-click event
+      SharedService.addOnClick(pieLabelsText, this);
+
       /* ------- Labels lines -------*/
       const pieLabelsLines = svg.select('.lines').selectAll('polyline')
         .data(pie(data));
 
-      const pieLabelsLines2 = pieLabelsLines.enter()
+      const pieLabelsPolyLines = pieLabelsLines.enter()
         .append('polyline')
         .attr('class', (d, k) => SharedService.getSegmentCssClass('pie_line', d.data, k));
 
+      pieLabelsPolyLines.transition().duration(transitionDuration)
+        .attrTween('points', this.tweenLine.bind(this));
 
-      const arc = this.arc;
-      const outerArc = this.outerArc;
-      const midAngle = this.midAngle;
-      pieLabelsLines2.transition().duration(1000)
-        .attrTween('points', function(d){
-          this._current = this._current || d;
-          const interpolate = d3.interpolate(this._current, d);
-          this._current = interpolate(0);
-          return (t) => {
-            const d2 = interpolate(t);
-            const pos = outerArc.centroid(d2);
-            pos[0] = radius * 0.95 * (midAngle(d2) < Math.PI ? 1 : -1);
-            return [arc.centroid(d2), outerArc.centroid(d2), pos];
-          };
-        });
+      // add pie polylines on-click event
+      SharedService.addOnClick(pieLabelsPolyLines, this);
 
       // emit "done" event
       this.onDone.emit(svg);
     }
-
   }
+
   midAngle(d) {
     return d.startAngle + (d.endAngle - d.startAngle) / 2;
-  }
-
-  tweenLabel(d) {
-    const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
-    return (t) => {
-      const d2 = interpolate(t);
-      const pos = this.outerArc.centroid(d2);
-      pos[0] = this.radius * (this.midAngle(d2) < Math.PI ? 1 : -1);
-      return `translate(${pos})`;
-    };
-  }
-  tweenLabelTextAnchor(d) {
-    const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
-    return (t) => {
-      const d2 = interpolate(t);
-      return this.midAngle(d2) < Math.PI ? 'start' : 'end';
-    };
   }
   tweenPie(b) {
     const i = PieChartComponent.d3.interpolate({startAngle: 0, endAngle: 0}, b);
     return (t) => this.arc(i(t));
+  }
+  tweenLine(d) {
+    const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
+    if(d.data.value) {
+      return (t) => {
+        const d2 = interpolate(t);
+        const pos = this.outerArc.centroid(d2);
+        pos[0] = this.radius * 0.95 * (this.midAngle(d2) < Math.PI ? 1 : -1);
+        return [this.arc.centroid(d2), this.outerArc.centroid(d2), pos];
+      };
+    }
+  }
+   tweenLabel(d) {
+    const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
+     if(d.data.value) {
+       return (t) => {
+         const d2 = interpolate(t);
+         const pos = this.outerArc.centroid(d2);
+         pos[0] = this.radius * (this.midAngle(d2) < Math.PI ? 1 : -1);
+         return `translate(${pos})`;
+       };
+     }
+  }
+  tweenLabelTextAnchor(d) {
+    const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
+    if(d.data.value) {
+      return (t) => {
+        const d2 = interpolate(t);
+        return this.midAngle(d2) < Math.PI ? 'start' : 'end';
+      };
+    }
   }
 }
