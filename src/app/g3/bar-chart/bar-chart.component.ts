@@ -45,7 +45,7 @@ export class BarChartComponent implements OnChanges {
         .attr('transform', `translate(${margin.left},${margin.top})`);
 
       // create y scale
-      const maxYValue = d3.max(data, d => d.value);
+      const maxYValue = d3.max(data, d => (d.hasOwnProperty('value')) ? d.value : d3.sum(d.values));
       const yScale = d3.scaleLinear()
         .domain([0, maxYValue])
         .range([height, 0]);
@@ -58,60 +58,75 @@ export class BarChartComponent implements OnChanges {
       // create y axis
       SharedService.createAxis('y', 'left', yScale, containerAxisData, this.config);
 
-      // x scale
+      // create x scale
+      const xScaleLabels = (this.config.axes && this.config.axes.x) ? this.config.axes.x.labels : undefined;
+      const xScaleDomain = (xScaleLabels) ? xScaleLabels : SharedService.getScaleBandDomain(data);
       const xScale = d3.scaleBand()
         .padding(0.2)
-        .domain(data.map(d => d.text))
+        .domain(xScaleDomain)
         .range([0, width]);
       // create x axis
       SharedService.createAxis('x', 'bottom', xScale, containerAxisData, this.config);
 
-      const barContainers = mainG.selectAll('rect')
+      const barContainers = mainG.selectAll()
         .data(data)
         .enter()
-        .append('g');
-      // add columns - bars (rects elements)
-      const bars = barContainers .append('rect')
+        .append('g')
+        .attr('class', (d, i) => SharedService.getSegmentCssClass('bar_container', d, i))
+        .attr('transform', (d, i) => {
+          const xVal = SharedService.getXbyScaleBand(xScale, xScaleLabels, d, i);
+          return `translate(${xVal}, 0)`;
+        })
+        .attr('width', d => xScale.bandwidth());
+
+      // add columns - bars (rect elements)
+      const bars = barContainers.selectAll('rect')
+        .data(d => (d.hasOwnProperty('value')) ? [d] : SharedService.stackData(d))
+        .enter()
+        .append('rect')
         .attr('id', d => d.id)
-        .attr('class', (d, k) => SharedService.getSegmentCssClass('bar', d, k));
+        .attr('class', `${SharedService.CSS_PREFIX}bar`);
+
       // fill by color function
       if (this.config.colorFunction) {
-        bars.attr('fill', (d, k) => this.config.colorFunction(d, k));
+        bars.attr('fill', (d, i) => this.config.colorFunction(d, i));
       }
       // add tooltip
       bars.append('title').text((d) => (d.text) ? `${d.text} : ${d.value}` : d.value);
       // add bar click event
       SharedService.addOnClick(bars, this);
+
       // add bars transition
-      bars.attr('x', d => xScale(d.text))
-        .attr('width', d => xScale.bandwidth())
+      bars.attr('width', d => xScale.bandwidth())
         .attr('y', height)
         .attr('height', 0)
         .transition()
         .duration(transitionDuration)
         .ease(d3.easeCircle)
         .attr('height', d => height - yScale(d.value))
-        .attr('y', d => yScale(d.value));
+        .attr('y', d => (d.stackData) ? yScale(d.stackData.high) : yScale(d.value));
 
       // add top label
       if (this.config.label && this.config.label.create !== false) {
+        const getText = this.config.label.getTextFunction;
         const labelXOffset = SharedService.getOffset(this.config.label.xOffset, xScale.bandwidth());
         const labelYOffset = SharedService.getOffset(this.config.label.yOffset, height);
         // create labels (with offset
-        const barLabels = barContainers
+        const barLabels = barContainers.selectAll('text')
+          .data(d => d.hasOwnProperty('value') ? [d] : SharedService.stackData(d))
+          .enter()
           .append('text')
-          .attr('class', 'graph__bar_label')
-          .text(d => (d.value))
+          .attr('class', `${SharedService.CSS_PREFIX}bar_label`)
+          // .text(d => (getText) ? getText(d) : d.value)
+          .text(d => (getText) ? getText(d) : d.value)
           .attr('dx', labelXOffset)
           .attr('dy', labelYOffset);
-        // add bar labels transition
-        barLabels.attr('x', d => xScale(d.text))
-          .attr('y', height)
+        barLabels.attr('y', height)
           .transition()
           .duration(transitionDuration)
           .ease(d3.easeCircle)
           .attr('y', d => {
-            const res = yScale(d.value);
+            const res = (d.stackData) ? yScale(d.stackData.high) : yScale(d.value);
             const max = height - labelYOffset;
             return(res < max) ? res : max;
           });

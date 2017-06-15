@@ -9,18 +9,19 @@ button {
   cursor: pointer;
   outline: none;
 }
-.myPieChart {
+.myPieChart, .myBarChart {
   display: block;
+  float: left;
+  border: 1px solid black;
+  margin: 10px;
+}
+.myPieChart {
   height: 300px;
   width: 400px;
-  border: 1px solid black;
-  margin-bottom: 20px;
 }
 .myBarChart {
-  display: block;
-  height: 500px;
+  height: 300px;
   width: 400px;
-  border: 1px solid black;
 }
 /* all graphs */
 * /deep/ .graph_container {
@@ -77,9 +78,14 @@ button {
 /* bar-chart styles */
 .myBarChart /deep/ .graph_container {
   .graph {
-    .graph__bar {
-      fill: lightblue;
-      &.disabled {
+    .graph__bar_container {
+      rect.graph__bar:nth-child(odd) {
+        fill: lightblue;
+      }
+      rect.graph__bar:nth-child(odd) {
+        fill: lightgreen;
+      }
+      &.disabled rect.graph__bar{
         fill: lightgray;
       }
 

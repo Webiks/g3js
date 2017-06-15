@@ -12,6 +12,7 @@ export class SharedService {
     transitionTime: 700,
     margin: {top: 30, right: 0, bottom: 60, left: 40}
   };
+  public static CSS_PREFIX = 'graph__';
   static addOnClick(element, context) {
     if (context.onClick) {
       element.on('click', (data, index, elements) => {
@@ -25,6 +26,26 @@ export class SharedService {
       data = data.filter((d) => config.filterDataFunction(d));
     }
     return data;
+  }
+  static stackData(data: any): any[] {
+      const stackData = [];
+      let low = 0;
+      let high = 0;
+      let dataPoint;
+      for (let i = 0; i < data.values.length; i++) {
+        high = low + data.values[i];
+        dataPoint = {
+          value: data.values[i],
+          origin: data,
+          stackData: { index: i, low, high }
+        };
+        if (data.valueLabels && data.valueLabels[i]) {
+          dataPoint.label = data.valueLabels[i];
+        }
+        stackData.push(dataPoint);
+        low += data.values[i];
+      }
+      return stackData;
   }
   static getTransitionDuration(config) {
     let duration = SharedService.DEFAULT.transitionTime;
@@ -42,11 +63,20 @@ export class SharedService {
 
   static getSegmentCssClass(segmentType, data, index) {
       // create per-category classes
-      const indexClass = `graph__${segmentType}--index${index}`;
+      const indexClass = `${SharedService.CSS_PREFIX}${segmentType}--index${index}`;
       const inputClass = (data.css) ? ` ${data.css}` : '';
-      return `graph__${segmentType} ${indexClass}${inputClass}`;
+      return `${SharedService.CSS_PREFIX}${segmentType} ${indexClass}${inputClass}`;
   }
-
+  static getScaleBandDomain(data) {
+    return data.map((d, i) => this.getScaleBandKey(d, i));
+  }
+  static getScaleBandKey(data, index) {
+    return (data.text) ? data.text : index.toString();
+  }
+  static getXbyScaleBand(scaleBand, configScaleBand, data, index) {
+    const scaleKey = (configScaleBand) ? configScaleBand[index] : SharedService.getScaleBandKey(data, index);
+    return scaleBand(scaleKey);
+  }
   static getOffset(offset, baseForPercentage) {
     if (offset === undefined) {
       return 0;

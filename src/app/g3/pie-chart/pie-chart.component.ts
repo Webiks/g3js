@@ -24,6 +24,11 @@ export class PieChartComponent implements OnChanges {
   @Output() onDone = new EventEmitter<any>();
   @ViewChild('graphContainer') parentElement: ElementRef;
 
+
+  static midAngle(d) {
+    return d.startAngle + (d.endAngle - d.startAngle) / 2;
+  }
+
   constructor(d3Service: D3Service, private sharedService: SharedService) {
     PieChartComponent.d3 = d3Service.getD3();
   }
@@ -77,8 +82,8 @@ export class PieChartComponent implements OnChanges {
         .data(pie(data))
         .enter()
         .append('path')
-        .attr('class', (d, k) => SharedService.getSegmentCssClass('pie_slice', d.data, k))
-        .attr('fill', (d, k) => this.config.colorFunction(d, k));
+        .attr('class', (d, i) => SharedService.getSegmentCssClass('pie_slice', d.data, i))
+        .attr('fill', (d, i) => this.config.colorFunction(d, i));
 
       // add pie-slices on-click event
       SharedService.addOnClick(pieSlices, this);
@@ -99,7 +104,7 @@ export class PieChartComponent implements OnChanges {
 
       const pieLabelsText = pieLabels.enter()
         .append('text')
-        .attr('class', (d, k) => SharedService.getSegmentCssClass('pie_label', d.data, k))
+        .attr('class', (d, i) => SharedService.getSegmentCssClass('pie_label', d.data, i))
         .attr('dy', '.35em')
         .text((d) => (d.data.value) ? d.data.text : null);
 
@@ -118,7 +123,7 @@ export class PieChartComponent implements OnChanges {
 
       const pieLabelsPolyLines = pieLabelsLines.enter()
         .append('polyline')
-        .attr('class', (d, k) => SharedService.getSegmentCssClass('pie_line', d.data, k));
+        .attr('class', (d, i) => SharedService.getSegmentCssClass('pie_line', d.data, i));
 
       pieLabelsPolyLines.transition().duration(transitionDuration)
         .attrTween('points', this.tweenLine.bind(this));
@@ -131,41 +136,38 @@ export class PieChartComponent implements OnChanges {
     }
   }
 
-  midAngle(d) {
-    return d.startAngle + (d.endAngle - d.startAngle) / 2;
-  }
   tweenPie(b) {
     const i = PieChartComponent.d3.interpolate({startAngle: 0, endAngle: 0}, b);
     return (t) => this.arc(i(t));
   }
   tweenLine(d) {
     const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
-    if(d.data.value) {
+    if (d.data.value) {
       return (t) => {
         const d2 = interpolate(t);
         const pos = this.outerArc.centroid(d2);
-        pos[0] = this.radius * 0.95 * (this.midAngle(d2) < Math.PI ? 1 : -1);
+        pos[0] = this.radius * 0.95 * (PieChartComponent.midAngle(d2) < Math.PI ? 1 : -1);
         return [this.arc.centroid(d2), this.outerArc.centroid(d2), pos];
       };
     }
   }
    tweenLabel(d) {
     const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
-     if(d.data.value) {
+     if (d.data.value) {
        return (t) => {
          const d2 = interpolate(t);
          const pos = this.outerArc.centroid(d2);
-         pos[0] = this.radius * (this.midAngle(d2) < Math.PI ? 1 : -1);
+         pos[0] = this.radius * (PieChartComponent.midAngle(d2) < Math.PI ? 1 : -1);
          return `translate(${pos})`;
        };
      }
   }
   tweenLabelTextAnchor(d) {
     const interpolate = PieChartComponent.d3.interpolate(this['_current'], d);
-    if(d.data.value) {
+    if (d.data.value) {
       return (t) => {
         const d2 = interpolate(t);
-        return this.midAngle(d2) < Math.PI ? 'start' : 'end';
+        return PieChartComponent.midAngle(d2) < Math.PI ? 'start' : 'end';
       };
     }
   }

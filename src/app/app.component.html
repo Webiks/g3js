@@ -2,6 +2,7 @@
   Graph Demo
 </h1>
 <p>
+  Active columns: {{activeColumnsNumber}} of {{myData.length}}
     <button (click)="toggleDisabledDisplay()">
       {{displayDisabledColumns?'Hide':'Show'}} Disabled columns
     </button>
@@ -22,6 +23,13 @@
                (onDone)="barChartDone($event)"
                (onClick)="barChartClick($event)"></app-bar-chart>
 
-<p>
-  Active columns: {{activeColumnsNumber}} of {{myData.length}}
-</p>
+
+
+
+<app-bar-chart class="myBarChart"
+               [ngClass]="{'done':graphsAreDone}"
+               [data]="myStackData"
+               [config]="barChartConfig"
+               [update]="updateFlag"
+               (onDone)="barChartDone($event)"
+               (onClick)="barChartClick($event)"></app-bar-chart>

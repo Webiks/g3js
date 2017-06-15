@@ -15,6 +15,7 @@ export class AppComponent {
   // text - set label
   // css - set bar class
   // color - NOT OPERATIONAL YET
+
   myData = [
     {id: '1', text: 'cat1', value: 13, color: ''},
     {text: 'cat2', value: 10},
@@ -24,6 +25,13 @@ export class AppComponent {
     {text: 'cat6', value: 0},
     {text: 'cat7', value: 20},
     {text: 'cat8', value: 8}
+  ];
+  lbls = ['A', 'B', 'C'];
+  myStackData = [
+    {id: '1', text: 'cat1', valueLabels: this.lbls, values: [13], color: ''},
+    {text: 'cat2', values: [10, 3]},
+    {text: 'cat3', values: [12, 10, 5], valueLabels: this.lbls},
+    {text: 'cat4', values: [3]},
   ];
   activeColumnsNumber = this.myData.length;
   // == all properties are optional ==
@@ -43,14 +51,20 @@ export class AppComponent {
     filterDataFunction: (d) => this.displayDisabledColumns || d.addToDOM !== false,
     skipTransitionOnce: false,
     margin: {top: 10, right: 20, bottom: 60, left: 40},
-    colorFunction: (d, i) => (d.value > 10) ? 'green' : 'red',
+    colorFunction: (d, i) => (i % 2) ? 'green' : 'red',
     label: {
       create: true,
       xOffset: '50%',
-      yOffset: 25
+      yOffset: 25,
+      // getTextFunction: (d) => d.value + '123'
+      getTextFunction: (d) => {
+        const prefix = (d.originIndex && d.valueLabels ) ? d.valueLabels[d.originIndex] + ':' : '';
+        return prefix  + d.value;
+      }
     },
     axes: {
       x: {
+        // labels: ['cat1', 'cat2', 'cat3', 'cat4', 'cat5' ],
         create: true,
         diagonalText: true,
         // access to d3 axis API
