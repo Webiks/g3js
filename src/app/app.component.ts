@@ -56,12 +56,84 @@ export class AppComponent {
       create: true,
       xOffset: '50%',
       yOffset: 25,
-      // getTextFunction: (d) => d.value + '123'
       getTextFunction: (d) => {
         const prefix = (d.originIndex && d.valueLabels ) ? d.valueLabels[d.originIndex] + ':' : '';
         return prefix  + d.value;
       }
     },
+    axes: {
+      x: {
+        // labels: ['cat1', 'cat2', 'cat3', 'cat4', 'cat5' ],
+        show: true,
+        diagonalText: true,
+        // access to d3 axis API
+        d3AxisAPI: {
+          tickSize: 8
+        },
+      },
+      y: {
+        // access to d3 axis API
+        d3AxisAPI: {
+          tickPadding: 10
+        }
+      }
+    },
+  };
+  barChartHorizontalConfig = {
+    id: '',
+    css: '',
+    direction: 'LeftToRight',
+    transitionTime: '',
+    filterDataFunction: (d) => this.displayDisabledColumns || d.addToDOM !== false,
+    skipTransitionOnce: false,
+    margin: {top: 10, right: 20, bottom: 60, left: 40},
+    colorFunction: (d, i) => (i % 2) ? 'green' : 'red',
+    label: {
+      create: true,
+      xOffset: '50%',
+      yOffset: 25,
+      getTextFunction: (d) => {
+        const prefix = (d.originIndex && d.valueLabels ) ? d.valueLabels[d.originIndex] + ':' : '';
+        return prefix  + d.value;
+      }
+    },
+    axes: {
+      x: {
+        // labels: ['cat1', 'cat2', 'cat3', 'cat4', 'cat5' ],
+        show: true,
+        diagonalText: true,
+        // access to d3 axis API
+        d3AxisAPI: {
+          tickSize: 8
+        },
+      },
+      y: {
+        // access to d3 axis API
+        d3AxisAPI: {
+          tickPadding: 10
+        }
+      }
+    },
+  };
+
+  stackedBarChartConfig = {
+    id: '',
+    css: '',
+    transitionTime: '',
+    filterDataFunction: (d) => this.displayDisabledColumns || d.addToDOM !== false,
+    skipTransitionOnce: false,
+    margin: {top: 10, right: 20, bottom: 60, left: 40},
+    colorFunction: (d, i) => (i % 2) ? 'green' : 'red',
+    label: {
+      create: true,
+      xOffset: '50%',
+      yOffset: 25,
+      getTextFunction: (d) => {
+        const prefix = (d.originIndex && d.valueLabels ) ? d.valueLabels[d.originIndex] + ':' : '';
+        return prefix  + d.value;
+      }
+    },
+    direction: 'leftToRight',
     axes: {
       x: {
         // labels: ['cat1', 'cat2', 'cat3', 'cat4', 'cat5' ],

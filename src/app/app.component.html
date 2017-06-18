@@ -17,19 +17,24 @@
 
 <app-bar-chart class="myBarChart"
                [ngClass]="{'done':graphsAreDone}"
-               [data]="myData"
-               [config]="barChartConfig"
-               [update]="updateFlag"
-               (onDone)="barChartDone($event)"
-               (onClick)="barChartClick($event)"></app-bar-chart>
-
-
-
-
-<app-bar-chart class="myBarChart"
-               [ngClass]="{'done':graphsAreDone}"
                [data]="myStackData"
                [config]="barChartConfig"
                [update]="updateFlag"
                (onDone)="barChartDone($event)"
                (onClick)="barChartClick($event)"></app-bar-chart>
+
+
+<app-bar-chart class="myBarChart"
+               [ngClass]="{'done':graphsAreDone}"
+               [data]="myStackData"
+               [config]="barChartHorizontalConfig"
+               [update]="updateFlag"
+               (onDone)="barChartDone($event)"
+               (onClick)="barChartClick($event)"></app-bar-chart>
+
+<!--<app-bar-chart class="myBarChart done"-->
+               <!--[data]="myStackData"-->
+               <!--[config]="stackedBarChartConfig"-->
+               <!--[update]="updateStackFlag"-->
+               <!--(onDone)="barChartDone($event)"-->
+               <!--(onClick)="barChartClick($event)"></app-bar-chart>-->

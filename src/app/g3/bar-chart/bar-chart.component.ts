@@ -13,6 +13,10 @@ import {SharedService} from 'app/g3/shared.service';
 export class BarChartComponent implements OnChanges {
 
   private static d3: D3;
+  private linearScale: any;
+  private ordinalScale: any;
+  private direction: string;
+  private mainElemMetric: any;
   @Input() data: any[];
   @Input() config: any;
   @Input() update: any;
@@ -44,40 +48,56 @@ export class BarChartComponent implements OnChanges {
         // move bars area according to margin
         .attr('transform', `translate(${margin.left},${margin.top})`);
 
-      // create y scale
-      const maxYValue = d3.max(data, d => (d.hasOwnProperty('value')) ? d.value : d3.sum(d.values));
-      const yScale = d3.scaleLinear()
-        .domain([0, maxYValue])
-        .range([height, 0]);
+      this.direction = (this.config.direction) ? this.config.direction : 'BottomToTop';
 
-      const containerAxisData = {
+      this.mainElemMetric = {
         container: mainG,
         height: height,
         width: width
       };
-      // create y axis
-      SharedService.createAxis('y', 'left', yScale, containerAxisData, this.config);
+      let ordinalScaleLabels;
+      let ordinalScaleDomain;
+      const ordinalScalePadding = .2;
 
-      // create x scale
-      const xScaleLabels = (this.config.axes && this.config.axes.x) ? this.config.axes.x.labels : undefined;
-      const xScaleDomain = (xScaleLabels) ? xScaleLabels : SharedService.getScaleBandDomain(data);
-      const xScale = d3.scaleBand()
-        .padding(0.2)
-        .domain(xScaleDomain)
-        .range([0, width]);
-      // create x axis
-      SharedService.createAxis('x', 'bottom', xScale, containerAxisData, this.config);
+      // create scales and axes;
+      switch (this.direction) {
+        case 'BottomToTop':
+          // y scale is linear
+          this.linearScale  = SharedService.createScaleLinear(data, height, 0);
+          SharedService.createAxis('y', 'left', this.linearScale, this.mainElemMetric, this.config);
 
+          ordinalScaleLabels = (this.config.axes && this.config.axes.x) ? this.config.axes.x.labels : undefined;
+          // y scale is ordinal
+          ordinalScaleDomain = (ordinalScaleLabels) ? ordinalScaleLabels : SharedService.getScaleBandDomain(data);
+          this.ordinalScale = d3.scaleBand()
+            .padding(ordinalScalePadding)
+            .domain(ordinalScaleDomain)
+            .range([0, width]);
+
+          SharedService.createAxis('x', 'bottom', this.ordinalScale, this.mainElemMetric, this.config);
+          break;
+
+        case 'LeftToRight':
+          // y scale is ordinal
+          ordinalScaleDomain = (ordinalScaleLabels) ? ordinalScaleLabels : SharedService.getScaleBandDomain(data);
+          this.ordinalScale = d3.scaleBand()
+            .padding(ordinalScalePadding)
+            .domain(ordinalScaleDomain)
+            .range([0, height]);
+
+          SharedService.createAxis('y', 'left', this.ordinalScale, this.mainElemMetric, this.config);
+
+          // x scale is linear
+          this.linearScale  = SharedService.createScaleLinear(data, 0, width);
+          SharedService.createAxis('x', 'bottom', this.linearScale, this.mainElemMetric, this.config);
+          break;
+      }
       const barContainers = mainG.selectAll()
         .data(data)
         .enter()
         .append('g')
         .attr('class', (d, i) => SharedService.getSegmentCssClass('bar_container', d, i))
-        .attr('transform', (d, i) => {
-          const xVal = SharedService.getXbyScaleBand(xScale, xScaleLabels, d, i);
-          return `translate(${xVal}, 0)`;
-        })
-        .attr('width', d => xScale.bandwidth());
+        .attr('transform', (d, i) => this.getBarContainerTransform(ordinalScaleLabels, d, i));
 
       // add columns - bars (rect elements)
       const bars = barContainers.selectAll('rect')
@@ -97,42 +117,125 @@ export class BarChartComponent implements OnChanges {
       SharedService.addOnClick(bars, this);
 
       // add bars transition
-      bars.attr('width', d => xScale.bandwidth())
-        .attr('y', height)
-        .attr('height', 0)
-        .transition()
-        .duration(transitionDuration)
-        .ease(d3.easeCircle)
-        .attr('height', d => height - yScale(d.value))
-        .attr('y', d => (d.stackData) ? yScale(d.stackData.high) : yScale(d.value));
+      this.setAnimation(bars, transitionDuration);
 
       // add top label
       if (this.config.label && this.config.label.create !== false) {
         const getText = this.config.label.getTextFunction;
-        const labelXOffset = SharedService.getOffset(this.config.label.xOffset, xScale.bandwidth());
-        const labelYOffset = SharedService.getOffset(this.config.label.yOffset, height);
+        const ordinalBandwidthCenter = SharedService.getOffset('50%', this.ordinalScale.bandwidth());
         // create labels (with offset
+        const padding = 20;
         const barLabels = barContainers.selectAll('text')
           .data(d => d.hasOwnProperty('value') ? [d] : SharedService.stackData(d))
           .enter()
           .append('text')
           .attr('class', `${SharedService.CSS_PREFIX}bar_label`)
-          // .text(d => (getText) ? getText(d) : d.value)
-          .text(d => (getText) ? getText(d) : d.value)
-          .attr('dx', labelXOffset)
-          .attr('dy', labelYOffset);
-        barLabels.attr('y', height)
-          .transition()
-          .duration(transitionDuration)
-          .ease(d3.easeCircle)
-          .attr('y', d => {
-            const res = (d.stackData) ? yScale(d.stackData.high) : yScale(d.value);
-            const max = height - labelYOffset;
-            return(res < max) ? res : max;
-          });
-        // emit "done" event
-        this.onDone.emit(svg);
+          .text(d => (getText) ? getText(d) : d.value);
+
+        switch (this.direction) {
+          case 'BottomToTop':
+            barLabels.attr('dx', ordinalBandwidthCenter);
+            break;
+          case 'LeftToRight':
+            barLabels.attr('dy', ordinalBandwidthCenter / 2 + this.ordinalScale.bandwidth() / 2);
+            break;
+        }
+        this.setLabelsAnimation(barLabels, transitionDuration, padding);
+        // barLabels.attr('y', height)
+        //   .transition()
+        //   .duration(transitionDuration)
+        //   .ease(d3.easeCircle)
+        //   .attr('y', d => {
+        //     const res = (d.stackData) ? this.linearScale(d.stackData.high) : this.linearScale(d.value);
+        //     const max = height - labelYOffset;
+        //     return(res < max) ? res : max;
+        //   });
       }
+      // emit "done" event
+      this.onDone.emit(svg);
+    }
+  }
+  setLabelsAnimation(barLabels, duration, padding) {
+    const d3 = BarChartComponent.d3;
+    let propToAnimate;
+    let fromFunc;
+    let toFunc;
+    switch (this.direction) {
+      case 'BottomToTop':
+        propToAnimate = 'y';
+        fromFunc = () => this.mainElemMetric.height;
+        toFunc = (d) => {
+          const value = this.getBarLinearValue(d, 'high') + padding;
+          const max = this.mainElemMetric.height;
+          return (value < max) ? value : max;
+        };
+        break;
+      case 'LeftToRight':
+        propToAnimate = 'x';
+        fromFunc = () => 0;
+        toFunc = (d) => {
+          const value = this.getBarLinearValue(d, 'high') - padding;
+          const min = 10;
+          return (value < min) ? min : value;
+        };
+        break;
+    }
+    barLabels.attr(propToAnimate, d => fromFunc(d))
+      .transition()
+      .duration(duration)
+      .ease(d3.easeCircle)
+      .attr(propToAnimate, d => toFunc(d));
+  }
+  getBarContainerTransform(configScaleBand, data, index) {
+    let xVal = 0;
+    let yVal = 0;
+    switch (this.direction) {
+      case 'BottomToTop':
+        xVal = SharedService.getValueByScaleBand(this.ordinalScale, configScaleBand, data, index);
+        break;
+      case 'LeftToRight':
+        xVal = 1;
+        yVal = SharedService.getValueByScaleBand(this.ordinalScale, configScaleBand, data, index);
+        break;
+    }
+    return `translate(${xVal}, ${yVal})`;
+  }
+
+  getBarLinearValue(d, stackProp) {
+    switch (this.direction) {
+      case 'BottomToTop':
+        return (d.stackData) ? this.linearScale(d.stackData[stackProp]) : this.linearScale(d.value);
+      case 'LeftToRight':
+        return (d.stackData) ? this.linearScale(d.stackData[stackProp]) : this.linearScale(d.value);
+    }
+  }
+
+  setAnimation(bars, duration) {
+    const d3 = BarChartComponent.d3;
+
+    switch (this.direction) {
+      case 'BottomToTop':
+        // animate height
+        bars.attr('width', d => this.ordinalScale.bandwidth())
+          .attr('y', this.mainElemMetric.height)
+          .attr('height', 0)
+          .transition()
+          .duration(duration)
+          .ease(d3.easeCircle)
+          .attr('height', d => this.mainElemMetric.height - this.linearScale(d.value))
+          .attr('y', d => this.getBarLinearValue(d, 'high'));
+        break;
+      case 'LeftToRight':
+        // animate width
+        bars.attr('height', d => this.ordinalScale.bandwidth())
+          .attr('x', 0)
+          .attr('width', 0)
+          .transition()
+          .duration(duration)
+          .ease(d3.easeCircle)
+          .attr('width', d => this.linearScale(d.value))
+          .attr('x', d => (d.stackData) ? this.getBarLinearValue(d, 'low') : 0);
+        break;
     }
   }
 }

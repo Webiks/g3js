@@ -67,13 +67,26 @@ export class SharedService {
       const inputClass = (data.css) ? ` ${data.css}` : '';
       return `${SharedService.CSS_PREFIX}${segmentType} ${indexClass}${inputClass}`;
   }
+  // static createScaleLinear(data: Array<any>, config, containerData) {
+  static createScaleLinear(data: Array<any>, rangeMin, rangeMax) {
+    const d3 = SharedService.d3;
+    // const direction = (config.direction) ? config.direction : 'BottomToTop';
+    // todo: add support for maxLinearValue
+    const domainMax = d3.max(data, d => (d.hasOwnProperty('value')) ? d.value : d3.sum(d.values));
+    // todo: add support for all 4/3 directions
+    // const rangeMax = (direction === 'BottomToTop') ? containerData.height : containerData.width;
+    return d3.scaleLinear()
+      .domain([0, domainMax])
+      .range([rangeMin, rangeMax]);
+  }
+
   static getScaleBandDomain(data) {
     return data.map((d, i) => this.getScaleBandKey(d, i));
   }
   static getScaleBandKey(data, index) {
     return (data.text) ? data.text : index.toString();
   }
-  static getXbyScaleBand(scaleBand, configScaleBand, data, index) {
+  static getValueByScaleBand(scaleBand, configScaleBand, data, index) {
     const scaleKey = (configScaleBand) ? configScaleBand[index] : SharedService.getScaleBandKey(data, index);
     return scaleBand(scaleKey);
   }
@@ -110,8 +123,8 @@ export class SharedService {
     const axisConfig = config.axes[axisKey];
     let axisElement;
     let transformString;
-    // create axis and axis css-transform string
-    if (axisConfig.create !== false) {
+    // show axis and axis css-transform string
+    if (axisConfig.show !== false) {
       // todo: add more directions support?
       switch (position) {
         case 'left':
